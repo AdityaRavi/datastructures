@@ -152,10 +152,7 @@ class LinkedList:
     -------
     void
     """
-    self.head = None
-    self.tail = None
-    self.pointer = None
-    self.length = 0
+    self.__init__()
   
   def clone(self):
     """Returns a shallow copy of this list.
@@ -202,15 +199,61 @@ class LinkedList:
     """
     return
 
-  def element(self):
-    """Retrieves, but does not remove, the head (first element) of this list.
+  def _getNodeFromIndex(self, index):
+    # Empty list or invalid index
+    if(self.length - 1 < index or index < 0):
+      return None
+    # Search from head
+    if(index <= self.length / 2):
+      return self._getNodeFromHead(index)
+    # Search from tail
+    return self._getNodeFromTail(index)
 
-    Returns
-    -------
-    E
-      Element at head of this list.
-    """
-    return self.head.element
+  def _getNodeFromHead(self, index):
+    self.pointer = self.head
+    pointer_index = 0
+    while(pointer_index != index and pointer_index < self.length):
+      self.pointer = self.pointer.next
+      pointer_index += 1
+    return self.pointer
+
+  def _getNodeFromTail(self, index):
+    self.pointer = self.tail
+    pointer_index = self.length - 1
+    while(pointer_index != index and pointer_index >= 0):
+      self.pointer = self.pointer.prev
+      pointer_index -= 1
+    return self.pointer
+  
+  def _getNodeFromElement(self, element):
+    self.pointer = self.head
+    pointer_index = 0
+    while(pointer_index < self.length):
+      if(self.pointer.element == element):
+        return self.pointer
+      self.pointer = self.pointer.next
+      pointer_index += 1
+    return None
+
+  def _getElementIndexFromHead(self, element):
+    self.pointer = self.head
+    pointer_index = 0
+    while(pointer_index < self.length):
+      if(self.pointer.element == element):
+        return pointer_index
+      self.pointer = self.pointer.next
+      pointer_index += 1
+    return -1
+
+  def _getElementIndexFromTail(self, element):
+    self.pointer = self.tail
+    pointer_index = self.length - 1
+    while(pointer_index >= 0):
+      if(self.pointer.element == element):
+        return pointer_index
+      self.pointer = self.pointer.prev
+      pointer_index -= 1
+    return -1
   
   def get(self, index):
     """Returns the element at the specified position in this list.
@@ -226,14 +269,10 @@ class LinkedList:
     E
       Element at index.
     """
-    if(self.length - 1 < index):
+    node = self._getNodeFromIndex(index)
+    if(not node):
       return None
-    self.pointer = self.head
-    pointer_index = 0
-    while(pointer_index != index):
-      self.pointer = self.pointer.next
-      pointer_index += 1
-    return self.pointer.element
+    return node.element
 
   def getFirst(self):
     """Returns the first element in this list.
@@ -243,7 +282,7 @@ class LinkedList:
     E
       Element at the beginning of this list.
     """
-    return self.head.element
+    return self.get(0)
 
   def getLast(self):
     """Returns the last element in this list.
@@ -253,7 +292,7 @@ class LinkedList:
     E
       Element at the end of this list.
     """
-    return self.tail.element
+    return self.get(self.length - 1)
 
   def indexOf(self, element):
     """Returns the index of the first occurrence of the specified element in this list, or -1 if this list does not contain the element.
@@ -268,14 +307,7 @@ class LinkedList:
     int
        Index of element.
     """
-    self.pointer = self.head
-    pointer_index = 0
-    while(self.pointer != None):
-      if(self.pointer.element == element):
-        return pointer_index
-      self.pointer = self.pointer.next
-      pointer_index += 1
-    return -1
+    return self._getElementIndexFromHead(element)
 
   def lastIndexOf(self, element):
     """Returns the index of the last occurrence of the specified element in this list, or -1 if this list does not contain the element.
@@ -290,62 +322,19 @@ class LinkedList:
     int
        Last index of element.
     """
-    self.pointer = self.tail
-    pointer_index = self.length - 1
-    while(self.pointer != None):
-      if(self.pointer.element == element):
-        return pointer_index
-      self.pointer = self.pointer.prev
-      pointer_index -= 1
-    return -1
+    return self._getElementIndexFromTail(element)
 
   def listIterator(self): # Don't need this in python
     """Returns a list-iterator of the elements in this list (in proper sequence), starting at the specified position in the list.
     Skip this
     """
     return
-  
-  def poll(self):
-    """Retrieves and removes the head (first element) of this list.
-    
-    Returns
-    -------
-    E
-     The element polled.
-    """
-    if(self.length == 0):
-      return None
-    element = self.head.element
-    self.head = self.head.next
-    self.head.prev = None
-    self.length -= 1
-    return element
 
-  def pollFirst(self):
-    """Retrieves and removes the first element of this list, or returns null if this list is empty.
-    
-    Returns
-    -------
-    E
-     The element polled. None if this list is empty.
-    """
-    return self.poll()
-
-  def pollLast(self):
-    """Retrieves and removes the last element of this list, or returns null if this list is empty.
-
-    Returns
-    -------
-    E
-     The element polled. None if this list is empty.
-    """
-    if(self.length == 0):
-      return None
-    element = self.tail.element
-    self.tail = self.tail.prev
-    self.tail.next = None
-    self.length -= 1
-    return element
+  def _removeNode(self, node):
+    if(node.next):
+      node.next.prev = node.prev
+    if(node.prev):
+      node.prev.next = node.next
 
   def remove(self, index=None, element=None):
     """Retrieves an element of this list.
@@ -353,7 +342,7 @@ class LinkedList:
     If no parameters provided, removed the element at the head of this list
     If index provided, removes the element at the index
     If element provided, searches for and removes the element from the list if it exists
-    If index andd element are provided, removes element from index if and only if it matches element
+    If index and element are provided, removes element from index if and only if it matches element
 
     Parameters
     ----------
@@ -367,7 +356,31 @@ class LinkedList:
     E
      The element removed. None if the element or index is invalid of if this list is empty.
     """
-    return
+    removedElement = None
+    # element and index not defined
+    if((not index) and (not element)):
+      node = self._getNodeFromIndex(0)
+    
+    #element and index both defined
+    elif (index and element):
+      node1 = self._getNodeFromIndex(index)
+      node2 = self._getNodeFromElement(element)
+      if(node1 == node2 or node1.element == node2.element):
+        node = node1
+    
+    # only index provided
+    elif(index):
+      node = self._getNodeFromIndex(index)
+
+    # only element provided
+    else:
+      node = self._getNodeFromElement(element)
+
+    if(node):
+      removedElement = node.element
+      self._removeNode(node)
+    
+    return removedElement
 
   def removeFirst(self):
     """Removes and returns the first element from this list.
@@ -377,7 +390,7 @@ class LinkedList:
     E
      The element removed. None if this list is empty.
     """
-    return
+    return self.remove(0)
 
   def removeFirstOccurrence(self, element):
     """Removes the first occurrence of the specified element in this list (when traversing the list from head to tail).
@@ -397,7 +410,7 @@ class LinkedList:
     E
      The element removed. None if element does not exist or this list is empty.
     """
-    return
+    return self.remove(self.length - 1)
 
   def removeLastOccurrence(self, element):
     """Removes the last occurrence of the specified element in this list (when traversing the list from head to tail).
@@ -454,10 +467,18 @@ class LinkedList:
     """
     return
 
+
   def __repr__(self):
     """
     """
-    return
+    startmsg = 'LinkedList containing the following elemements: {5, 1, ...'
+    endmsg = '}'
+    node = self.head
+    while(node != None):
+      startmsg += str(node.element) + ', '
+      node = node.next
+    return startmsg + endmsg # LinkedList containing the following elemements: {5, 1, ...'}
+  
 
   def __str__(self):
     """
