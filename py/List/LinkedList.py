@@ -18,6 +18,8 @@ class LinkedList:
     self.tail = None
     self.pointer = None
     self.length = 0
+    if(collection):
+      self.addAll(collection=collection)
 
   def add(self, element, index=None):
     """Inserts the specified element to the list.
@@ -104,8 +106,7 @@ class LinkedList:
     if(not index):
       #add collection to the end of list
       for item in collection:
-        n = self.Node(item)
-        self.add(n)
+        self.add(item)
       return True
     
     #add collection to the specified index
@@ -163,10 +164,8 @@ class LinkedList:
           A shallow copy of this list.
     """
     new_list = LinkedList()
-    self.pointer = self.head
-    while self.pointer != None:
-      new_list.add(self.pointer.element)
-      self.pointer = self.pointer.next
+    for element in self:
+      new_list.add(element)
     return new_list
 
   def contains(self, element):
@@ -182,11 +181,9 @@ class LinkedList:
     boolean
            True if element exists. False otherwise.
     """
-    self.pointer = self.head
-    while(self.pointer != None):
-      if(self.pointer.element == element):
+    for e in self:
+      if(e == element):
         return True
-      self.pointer = self.pointer.next
     return False
 
   def descendingIterator(self):
@@ -210,48 +207,48 @@ class LinkedList:
     return self._getNodeFromTail(index)
 
   def _getNodeFromHead(self, index):
-    self.pointer = self.head
+    pointer = self.head
     pointer_index = 0
     while(pointer_index != index and pointer_index < self.length):
-      self.pointer = self.pointer.next
+      pointer = pointer.next
       pointer_index += 1
-    return self.pointer
+    return pointer
 
   def _getNodeFromTail(self, index):
-    self.pointer = self.tail
+    pointer = self.tail
     pointer_index = self.length - 1
     while(pointer_index != index and pointer_index >= 0):
-      self.pointer = self.pointer.prev
+      pointer = pointer.prev
       pointer_index -= 1
-    return self.pointer
+    return pointer
   
   def _getNodeFromElement(self, element):
-    self.pointer = self.head
+    pointer = self.head
     pointer_index = 0
     while(pointer_index < self.length):
-      if(self.pointer.element == element):
-        return self.pointer
-      self.pointer = self.pointer.next
+      if(pointer.element == element):
+        return pointer
+      pointer = pointer.next
       pointer_index += 1
     return None
 
   def _getElementIndexFromHead(self, element):
-    self.pointer = self.head
+    pointer = self.head
     pointer_index = 0
     while(pointer_index < self.length):
-      if(self.pointer.element == element):
+      if(pointer.element == element):
         return pointer_index
-      self.pointer = self.pointer.next
+      pointer = pointer.next
       pointer_index += 1
     return -1
 
   def _getElementIndexFromTail(self, element):
-    self.pointer = self.tail
+    pointer = self.tail
     pointer_index = self.length - 1
     while(pointer_index >= 0):
-      if(self.pointer.element == element):
+      if(pointer.element == element):
         return pointer_index
-      self.pointer = self.pointer.prev
+      pointer = pointer.prev
       pointer_index -= 1
     return -1
   
@@ -333,8 +330,12 @@ class LinkedList:
   def _removeNode(self, node):
     if(node.next):
       node.next.prev = node.prev
+    else:
+      self.tail = node.prev
     if(node.prev):
       node.prev.next = node.next
+    else:
+      self.head = node.next
 
   def remove(self, index=None, element=None):
     """Retrieves an element of this list.
@@ -430,7 +431,25 @@ class LinkedList:
     E
      The element previously at that position.
     """
-    return
+    newNode = self.Node(element)
+    oldNode = self._getNodeFromIndex(index)
+
+    newNode.next = oldNode.next
+    newNode.prev = oldNode.prev
+
+    if(newNode.next):
+      newNode.next.prev = newNode
+    else:
+      self.tail = newNode
+    if(newNode.prev):
+      newNode.prev.next = newNode
+    else:
+      self.head = newNode
+
+    oldNode.next = None
+    oldNode.prev = None
+
+    return oldNode.element
 
   def size(self):
     """Returns the number of elements in this list.
@@ -447,43 +466,57 @@ class LinkedList:
     
     Returns
     -------
-    []
+    list
       An array of the elements in this list.
     """
-    return
+    arr = []
+    for element in self:
+      arr.append(element)
+    return arr
 
   def __iter__(self):
     """
     """
+    self.pointer = self.head
     return self
 
   def __next__(self):
     """
     """
-    return
+    if(self.pointer == None):
+      raise StopIteration
+    element = self.pointer.element
+    self.pointer = self.pointer.next
+    return element
 
-  def __eq__(self, element):
+  def __eq__(self, anotherList):
     """
+    What do you define as equal? Just contents or type as well?
+    - Have the same type
+    - Have the same length
+    - Have the same content
+    - Each element can be compared using == 
     """
-    return
+    result = True
+    result = result and isinstance(anotherList, LinkedList)
+    result = result and (self.size() == anotherList.size())
+
+    if(result):
+      lst1 = self.toArray()
+      lst2 = anotherList.toArray()
+
+      for i in range(0, self.size()):
+        if(lst1[i] != lst2[i]):
+          result = False
+          break
+
+    return result
 
 
   def __repr__(self):
+    """String representation of this LinkedList
     """
-    """
-    startmsg = 'LinkedList containing the following elemements: {5, 1, ...'
-    endmsg = '}'
-    node = self.head
-    while(node != None):
-      startmsg += str(node.element) + ', '
-      node = node.next
-    return startmsg + endmsg # LinkedList containing the following elemements: {5, 1, ...'}
-  
-
-  def __str__(self):
-    """
-    """
-    return
+    return str(self.toArray())
 
   def __hash__(self):
     """
